@@ -1358,22 +1358,28 @@
             // Load song
             function loadSong(songSrc) {
                 // Set song source
-                audioPlayer.src = songSrc;;
-                
-                // Update song name display
-                const formattedName = songSrc.replace('[Hozier] ', '').replace('.mp3', '');
-                trackTitle.textContent = formattedName;
-                
-                // Highlight active song in list
-                document.querySelectorAll('.song-item').forEach(item => {
-                    item.classList.remove('active');
-                });
-                
-                const activeSong = document.querySelector(`.song-item[data-index="${currentSongIndex}"]`);
-                if (activeSong) {
-                    activeSong.classList.add('active');
-                    // Ensure active song is visible in the scroll area
-                    activeSong.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                try {
+                    console.log("Loading song:", songSrc);
+                    audioPlayer.src = songSrc;
+                    
+                    // Update song name display
+                    const formattedName = songSrc.replace('[Hozier] ', '').replace('.mp3', '');
+                    trackTitle.textContent = formattedName;
+                    
+                    // Highlight active song in list
+                    document.querySelectorAll('.song-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    
+                    const activeSong = document.querySelector(`.song-item[data-index="${currentSongIndex}"]`);
+                    if (activeSong) {
+                        activeSong.classList.add('active');
+                        // Ensure active song is visible in the scroll area
+                        activeSong.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                } catch (error) {
+                    console.error("Error loading song:", error);
+                    trackTitle.textContent = "Error loading song";
                 }
             }
             
@@ -1413,14 +1419,24 @@
             
             // Play song
             function playSong() {
-                audioPlayer.play().catch(error => {
-                    console.error("Error playing audio:", error);
-                });
-                isPlaying = true;
-                playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                if (!audioPlayer.src) {
+                    console.error("No audio source set");
+                    return;
+                }
                 
-                // Start turntable
-                startRecord();
+                console.log("Attempting to play:", audioPlayer.src);
+                audioPlayer.play()
+                    .then(() => {
+                        console.log("Playback started successfully");
+                        isPlaying = true;
+                        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        startRecord();
+                    })
+                    .catch(error => {
+                        console.error("Error playing audio:", error);
+                        alert("Unable to play audio: " + error.message + ". Make sure audio files are properly uploaded and have correct permissions.");
+                        playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    });
             }
             
             // Pause song
@@ -1483,12 +1499,19 @@
             
             // Event listeners
             playBtn.addEventListener('click', () => {
+                console.log("Play button clicked, isPlaying:", isPlaying);
+                console.log("Current audio source:", audioPlayer.src);
+                
                 if (audioPlayer.src) { // Only toggle if a song is loaded
                     isPlaying ? pauseSong() : playSong();
                 } else if (songs.length > 0) {
                     // Load first song if none selected
+                    console.log("No song loaded, loading first song");
                     loadSong(songs[0]);
                     playSong();
+                } else {
+                    console.error("No songs available to play");
+                    alert("No songs available to play. Please check if the audio files are properly uploaded.");
                 }
             });
             
@@ -1511,6 +1534,28 @@
             // Initialize
             createSongList();
             setVolume(); // Set initial volume
+            
+            // Check if audio files are accessible
+            if (songs.length > 0) {
+                const testAudio = new Audio();
+                testAudio.src = songs[0];
+                
+                testAudio.addEventListener('error', (e) => {
+                    console.error("Error loading test audio:", e);
+                    const errorMessages = {
+                        1: "The fetching process was aborted by the user",
+                        2: "An error occurred on the network level",
+                        3: "An error occurred while decoding the media",
+                        4: "The audio file is corrupted or not supported"
+                    };
+                    
+                    const errorCode = testAudio.error ? testAudio.error.code : "unknown";
+                    const errorMessage = errorMessages[errorCode] || "Unknown error";
+                    
+                    console.error(`Audio error (${errorCode}): ${errorMessage}`);
+                    trackTitle.textContent = `Audio files may not be accessible (Error: ${errorMessage})`;
+                });
+            }
         });
     </script>
 </body>
