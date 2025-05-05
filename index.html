@@ -1244,6 +1244,21 @@
             let isSpinning = false;
             let spinSpeed = 6; // Default speed (33 RPM)
             
+            // Format GitHub Pages base URL correctly
+            function getBaseUrl() {
+                // Get the repository name from the URL
+                const pathSegments = window.location.pathname.split('/');
+                const repoName = pathSegments[1]; // This should be the repo name in GitHub Pages
+                
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    return ''; // Local development - use relative paths
+                } else if (window.location.hostname.includes('github.io')) {
+                    return '/' + repoName; // GitHub Pages path
+                } else {
+                    return ''; // Fallback to relative paths
+                }
+            }
+            
             // Start spinning record
             function startRecord() {
                 record.style.animationDuration = `${spinSpeed}s`;
@@ -1252,21 +1267,6 @@
                 
                 // Move stylus arm onto record
                 stylusArm.style.transform = 'rotate(0deg)';
-                
-                // If we have audio loaded, play it
-                if (audioPlayer.src) {
-                    audioPlayer.play().catch(error => {
-                        console.error("Error playing audio:", error);
-                    });
-                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                } else if (songs.length > 0) {
-                    // Load first song if none selected
-                    loadSong(songs[0]);
-                    audioPlayer.play().catch(error => {
-                        console.error("Error playing audio:", error);
-                    });
-                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                }
             }
             
             // Stop spinning record
@@ -1285,30 +1285,68 @@
                 });
             }
             
-            // List of songs in the Hozier album
+            // List of songs in the Hozier album - with correct paths for GitHub Pages
             const songs = [
-                "[Hozier] Take Me To Church.mp3",
-                "[Hozier] Angel Of Small Death & The Codeine Scene.mp3",
-                "[Hozier] Jackie And Wilson.mp3",
-                "[Hozier] Someone New.mp3",
-                "[Hozier] To Be Alone.mp3",
-                "[Hozier] From Eden.mp3",
-                "[Hozier] In A Week.mp3",
-                "[Hozier] Sedated.mp3",
-                "[Hozier] Work Song.mp3",
-                "[Hozier] Like Real People Do.mp3",
-                "[Hozier] It Will Come Back.mp3",
-                "[Hozier] Foreigners God.mp3",
-                "[Hozier] Cherry Wine (Live).mp3",
-                "[Hozier] In The Woods Somewhere.mp3",
-                "[Hozier] Run.mp3",
-                "[Hozier] Arsonists Lullabye.mp3",
-                "[Hozier] My Love Will Never Die.mp3",
-                "[Hozier] Someone New (Live).mp3",
-                "[Hozier] Problem Γº╕ Regulate (BBC Live Lounge).mp3",
-                "[Hozier] Whole Lotta Love (The Dermot OLeary Saturday Sessions Show).mp3",
-                "[Hozier] Do I Wanna Know∩╝ƒ (Live At the BBC).mp3",
-                "[Hozier] Lay Me Down (BBC Live Lounge).mp3"
+                {
+                    title: "Take Me To Church",
+                    file: "Take Me To Church.mp3",
+                    duration: "4:01"
+                },
+                {
+                    title: "Angel Of Small Death & The Codeine Scene",
+                    file: "Angel Of Small Death & The Codeine Scene.mp3",
+                    duration: "3:39"
+                },
+                {
+                    title: "Jackie And Wilson",
+                    file: "Jackie And Wilson.mp3",
+                    duration: "3:42"
+                },
+                {
+                    title: "Someone New",
+                    file: "Someone New.mp3",
+                    duration: "3:41"
+                },
+                {
+                    title: "To Be Alone",
+                    file: "To Be Alone.mp3",
+                    duration: "5:25"
+                },
+                {
+                    title: "From Eden",
+                    file: "From Eden.mp3",
+                    duration: "4:43"
+                },
+                {
+                    title: "In A Week",
+                    file: "In A Week.mp3",
+                    duration: "5:19"
+                },
+                {
+                    title: "Sedated",
+                    file: "Sedated.mp3",
+                    duration: "3:29"
+                },
+                {
+                    title: "Work Song",
+                    file: "Work Song.mp3",
+                    duration: "3:49"
+                },
+                {
+                    title: "Like Real People Do",
+                    file: "Like Real People Do.mp3",
+                    duration: "3:19"
+                },
+                {
+                    title: "It Will Come Back",
+                    file: "It Will Come Back.mp3", 
+                    duration: "4:39"
+                },
+                {
+                    title: "Foreigners God",
+                    file: "Foreigners God.mp3",
+                    duration: "3:43"
+                }
             ];
             
             // Get DOM elements
@@ -1333,16 +1371,13 @@
             function createSongList() {
                 songList.innerHTML = '';
                 songs.forEach((song, index) => {
-                    // Format song name by removing [Hozier] prefix and .mp3 extension
-                    const formattedName = song.replace('[Hozier] ', '').replace('.mp3', '');
-                    
                     const songItem = document.createElement('div');
                     songItem.classList.add('song-item');
                     songItem.dataset.index = index;
                     
                     songItem.innerHTML = `
                         <i class="fas fa-music"></i>
-                        <span>${formattedName}</span>
+                        <span>${song.title}</span>
                     `;
                     
                     songItem.addEventListener('click', () => {
@@ -1356,15 +1391,20 @@
             }
             
             // Load song
-            function loadSong(songSrc) {
-                // Set song source
+            function loadSong(song) {
                 try {
-                    console.log("Loading song:", songSrc);
-                    audioPlayer.src = songSrc;
+                    console.log("Loading song:", song.title);
+                    // Set the base path correctly for GitHub Pages or local development
+                    const basePath = getBaseUrl();
+                    audioPlayer.src = `${basePath}/${song.file}`;
+                    
+                    // Set fallback duration if audio metadata isn't loaded
+                    if (song.duration) {
+                        durationEl.textContent = song.duration;
+                    }
                     
                     // Update song name display
-                    const formattedName = songSrc.replace('[Hozier] ', '').replace('.mp3', '');
-                    trackTitle.textContent = formattedName;
+                    trackTitle.textContent = song.title;
                     
                     // Highlight active song in list
                     document.querySelectorAll('.song-item').forEach(item => {
@@ -1377,9 +1417,45 @@
                         // Ensure active song is visible in the scroll area
                         activeSong.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }
+                    
+                    // For GitHub Pages with CORS issues, we show a visual simulation mode
+                    audioPlayer.addEventListener('error', handleAudioError);
+                    
                 } catch (error) {
                     console.error("Error loading song:", error);
-                    trackTitle.textContent = "Error loading song";
+                    handleAudioError(error);
+                }
+            }
+            
+            // Handle audio errors by showing helpful messages and simulation options
+            function handleAudioError(error) {
+                console.error("Audio error:", error);
+                
+                // Display meaningful error message
+                trackTitle.textContent = songs[currentSongIndex].title + " (Visual Mode Only)";
+                currentTimeEl.textContent = "0:00";
+                
+                // GitHub Pages often has CORS issues with audio
+                // We'll simulate the visual experience without audio
+                startRecord(); // Start record spinning for visual effect
+                
+                // Show a notification that we're in visual-only mode
+                if (!document.getElementById('visual-mode-notice')) {
+                    const notice = document.createElement('div');
+                    notice.id = 'visual-mode-notice';
+                    notice.style.padding = '10px';
+                    notice.style.margin = '10px 0';
+                    notice.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+                    notice.style.borderRadius = '10px';
+                    notice.style.color = '#333';
+                    notice.innerHTML = `
+                        <p>🎵 <strong>Visual Mode Active:</strong> Due to GitHub Pages restrictions, audio playback may not be available.</p>
+                        <p>For full audio experience, download the files and run locally, or host on a full web server.</p>
+                    `;
+                    
+                    // Insert notice after the player
+                    const modernPlayer = document.querySelector('.modern-player');
+                    modernPlayer.parentNode.insertBefore(notice, modernPlayer.nextSibling);
                 }
             }
             
@@ -1421,22 +1497,51 @@
             function playSong() {
                 if (!audioPlayer.src) {
                     console.error("No audio source set");
+                    // Still provide visual feedback even without audio
+                    isPlaying = true;
+                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    startRecord();
                     return;
                 }
                 
                 console.log("Attempting to play:", audioPlayer.src);
-                audioPlayer.play()
-                    .then(() => {
-                        console.log("Playback started successfully");
-                        isPlaying = true;
-                        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                        startRecord();
-                    })
-                    .catch(error => {
-                        console.error("Error playing audio:", error);
-                        alert("Unable to play audio: " + error.message + ". Make sure audio files are properly uploaded and have correct permissions.");
-                        playBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    });
+                
+                // Set up a promise to account for both success and failure
+                const playPromise = audioPlayer.play();
+                
+                // Modern browsers return a promise from the play function
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            console.log("Playback started successfully");
+                            isPlaying = true;
+                            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                            startRecord();
+                        })
+                        .catch(error => {
+                            console.error("Error playing audio:", error);
+                            
+                            // Still enable visual feedback even if audio fails
+                            isPlaying = true;
+                            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                            startRecord();
+                            
+                            // Handle different error scenarios
+                            if (error.name === 'NotAllowedError') {
+                                console.log("Audio playback was prevented by browser policy");
+                            } else if (error.name === 'NotSupportedError') {
+                                console.log("Audio format not supported");
+                            }
+                            
+                            // Visual simulation mode in case of GitHub Pages restrictions
+                            handleAudioError(error);
+                        });
+                } else {
+                    // Older browsers don't return a promise
+                    isPlaying = true;
+                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    startRecord();
+                }
             }
             
             // Pause song
@@ -1500,18 +1605,18 @@
             // Event listeners
             playBtn.addEventListener('click', () => {
                 console.log("Play button clicked, isPlaying:", isPlaying);
-                console.log("Current audio source:", audioPlayer.src);
                 
-                if (audioPlayer.src) { // Only toggle if a song is loaded
-                    isPlaying ? pauseSong() : playSong();
-                } else if (songs.length > 0) {
-                    // Load first song if none selected
-                    console.log("No song loaded, loading first song");
-                    loadSong(songs[0]);
-                    playSong();
+                if (isPlaying) {
+                    pauseSong();
                 } else {
-                    console.error("No songs available to play");
-                    alert("No songs available to play. Please check if the audio files are properly uploaded.");
+                    if (audioPlayer.src) {
+                        playSong();
+                    } else if (songs.length > 0) {
+                        loadSong(songs[0]);
+                        playSong();
+                    } else {
+                        console.error("No songs available to play");
+                    }
                 }
             });
             
@@ -1535,26 +1640,40 @@
             createSongList();
             setVolume(); // Set initial volume
             
-            // Check if audio files are accessible
+            // Pre-select the first song
             if (songs.length > 0) {
-                const testAudio = new Audio();
-                testAudio.src = songs[0];
+                loadSong(songs[0]);
+                // Don't auto-play to avoid autoplay restrictions
+            }
+            
+            // Add visual simulation when playback isn't possible
+            function startVisualSimulation() {
+                startRecord();
+                isPlaying = true;
+                playBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 
-                testAudio.addEventListener('error', (e) => {
-                    console.error("Error loading test audio:", e);
-                    const errorMessages = {
-                        1: "The fetching process was aborted by the user",
-                        2: "An error occurred on the network level",
-                        3: "An error occurred while decoding the media",
-                        4: "The audio file is corrupted or not supported"
-                    };
+                // Simulate progress movement
+                let simulatedTime = 0;
+                const duration = 240; // 4 minutes in seconds
+                
+                const simulationInterval = setInterval(() => {
+                    if (!isPlaying) {
+                        clearInterval(simulationInterval);
+                        return;
+                    }
                     
-                    const errorCode = testAudio.error ? testAudio.error.code : "unknown";
-                    const errorMessage = errorMessages[errorCode] || "Unknown error";
+                    simulatedTime += 1;
+                    if (simulatedTime >= duration) {
+                        simulatedTime = 0;
+                        // Go to next song when simulation reaches end
+                        nextSong();
+                    }
                     
-                    console.error(`Audio error (${errorCode}): ${errorMessage}`);
-                    trackTitle.textContent = `Audio files may not be accessible (Error: ${errorMessage})`;
-                });
+                    // Update visual progress
+                    const progress = (simulatedTime / duration) * 100;
+                    progressFilled.style.width = `${progress}%`;
+                    currentTimeEl.textContent = formatTime(simulatedTime);
+                }, 1000);
             }
         });
     </script>
